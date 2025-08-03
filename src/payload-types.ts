@@ -68,6 +68,12 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    schools: School;
+    students: Student;
+    inquiries: Inquiry;
+    applications: Application;
+    messages: Message;
+    messageTemplates: MessageTemplate;
     media: Media;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -76,13 +82,19 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    schools: SchoolsSelect<false> | SchoolsSelect<true>;
+    students: StudentsSelect<false> | StudentsSelect<true>;
+    inquiries: InquiriesSelect<false> | InquiriesSelect<true>;
+    applications: ApplicationsSelect<false> | ApplicationsSelect<true>;
+    messages: MessagesSelect<false> | MessagesSelect<true>;
+    messageTemplates: MessageTemplatesSelect<false> | MessageTemplatesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: string;
+    defaultIDType: number;
   };
   globals: {};
   globalsSelect: {};
@@ -118,7 +130,14 @@ export interface UserAuthOperations {
  * via the `definition` "users".
  */
 export interface User {
-  id: string;
+  id: number;
+  firstName: string;
+  lastName: string;
+  role: 'ADMIN' | 'TEACHER' | 'PARENT' | 'STUDENT';
+  school?: (number | null) | School;
+  phone?: string | null;
+  dateOfBirth?: string | null;
+  address?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -139,10 +158,56 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "schools".
+ */
+export interface School {
+  id: number;
+  name: string;
+  /**
+   * Used for multi-tenant routing (e.g., oakwood-academy)
+   */
+  slug: string;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  logo?: (number | null) | Media;
+  establishedYear?: number | null;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  settings?: {
+    allowOnlineApplications?: boolean | null;
+    applicationDeadline?: string | null;
+    gradeClasses?:
+      | {
+          grade: string;
+          capacity?: number | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
-  id: string;
+  id: number;
   alt: string;
   updatedAt: string;
   createdAt: string;
@@ -158,23 +223,370 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "students".
+ */
+export interface Student {
+  id: number;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  grade: string;
+  school: number | School;
+  parents?: (number | User)[] | null;
+  enrollmentStatus: 'ENROLLED' | 'PENDING' | 'WAITLISTED' | 'WITHDRAWN' | 'GRADUATED';
+  enrollmentDate?: string | null;
+  /**
+   * Unique identifier for the student
+   */
+  studentId?: string | null;
+  emergencyContact?: {
+    name?: string | null;
+    relationship?: string | null;
+    phone?: string | null;
+    email?: string | null;
+  };
+  medicalInfo?: {
+    allergies?: string | null;
+    medications?: string | null;
+    specialNeeds?: string | null;
+  };
+  academicInfo?: {
+    previousSchool?: string | null;
+    gpa?: number | null;
+    notes?: {
+      root: {
+        type: string;
+        children: {
+          type: string;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "inquiries".
+ */
+export interface Inquiry {
+  id: number;
+  studentName: string;
+  parentFirstName: string;
+  parentLastName: string;
+  parentEmail: string;
+  parentPhone?: string | null;
+  school: number | School;
+  gradeInterested: string;
+  enrollmentYear: '2024-2025' | '2025-2026' | '2026-2027';
+  inquiryType: 'GENERAL' | 'TOUR' | 'APPLICATION' | 'FINANCIAL' | 'ACADEMIC' | 'OTHER';
+  message?: string | null;
+  status: 'NEW' | 'CONTACTED' | 'TOUR_SCHEDULED' | 'APPLICATION_SENT' | 'CLOSED';
+  assignedTo?: (number | null) | User;
+  followUpDate?: string | null;
+  /**
+   * Internal notes for staff use only
+   */
+  notes?: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  source?: ('WEBSITE' | 'REFERRAL' | 'SOCIAL_MEDIA' | 'ADVERTISEMENT' | 'EVENT' | 'OTHER') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "applications".
+ */
+export interface Application {
+  id: number;
+  /**
+   * Link to the original inquiry if applicable
+   */
+  inquiry?: (number | null) | Inquiry;
+  /**
+   * Unique application identifier
+   */
+  applicationNumber: string;
+  school: number | School;
+  studentInfo: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    grade: string;
+    gender?: ('MALE' | 'FEMALE' | 'OTHER' | 'NOT_SPECIFIED') | null;
+    previousSchool?: string | null;
+    currentGPA?: number | null;
+  };
+  parentInfo: {
+    primaryParent: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone: string;
+      occupation?: string | null;
+      relationship?: ('MOTHER' | 'FATHER' | 'GUARDIAN' | 'OTHER') | null;
+    };
+    secondaryParent?: {
+      firstName?: string | null;
+      lastName?: string | null;
+      email?: string | null;
+      phone?: string | null;
+      occupation?: string | null;
+      relationship?: ('MOTHER' | 'FATHER' | 'GUARDIAN' | 'OTHER') | null;
+    };
+    address: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+    };
+  };
+  documents?:
+    | {
+        documentType: 'BIRTH_CERTIFICATE' | 'SCHOOL_RECORDS' | 'IMMUNIZATION' | 'PHOTO_ID' | 'RECOMMENDATION' | 'OTHER';
+        document: number | Media;
+        notes?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  status:
+    | 'DRAFT'
+    | 'SUBMITTED'
+    | 'UNDER_REVIEW'
+    | 'INTERVIEW_SCHEDULED'
+    | 'ACCEPTED'
+    | 'WAITLISTED'
+    | 'REJECTED'
+    | 'WITHDRAWN';
+  submittedAt?: string | null;
+  reviewedBy?: (number | null) | User;
+  /**
+   * Internal notes for admissions committee
+   */
+  reviewNotes?: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  interviewDate?: string | null;
+  tuitionAidRequested?: boolean | null;
+  enrollmentDeadline?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages".
+ */
+export interface Message {
+  id: number;
+  subject: string;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  sender: number | User;
+  recipients: (number | User)[];
+  messageType: 'INDIVIDUAL' | 'GROUP' | 'CLASS_ANNOUNCEMENT' | 'SCHOOL_ANNOUNCEMENT' | 'EMERGENCY' | 'NEWSLETTER';
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  school: number | School;
+  /**
+   * If this message is about a specific student
+   */
+  relatedStudent?: (number | null) | Student;
+  status: 'DRAFT' | 'SENT' | 'SCHEDULED' | 'FAILED';
+  sentAt?: string | null;
+  /**
+   * Schedule this message to be sent at a future date/time
+   */
+  scheduledFor?: string | null;
+  /**
+   * Track who has read this message
+   */
+  readReceipts?:
+    | {
+        user: number | User;
+        readAt: string;
+        id?: string | null;
+      }[]
+    | null;
+  attachments?: (number | Media)[] | null;
+  /**
+   * If this message was created from a template
+   */
+  template?: (number | null) | MessageTemplate;
+  /**
+   * If this is a reply to another message
+   */
+  parentThread?: (number | null) | Message;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messageTemplates".
+ */
+export interface MessageTemplate {
+  id: number;
+  name: string;
+  description?: string | null;
+  category:
+    | 'WELCOME'
+    | 'ADMISSIONS'
+    | 'ACADEMIC'
+    | 'BEHAVIORAL'
+    | 'EVENTS'
+    | 'EMERGENCY'
+    | 'NEWSLETTER'
+    | 'REMINDERS'
+    | 'GENERAL';
+  /**
+   * Leave empty for system-wide templates
+   */
+  school?: (number | null) | School;
+  /**
+   * Use {{variables}} for dynamic content (e.g., {{studentName}}, {{schoolName}})
+   */
+  subject: string;
+  /**
+   * Use {{variables}} for dynamic content. Available variables depend on the message context.
+   */
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Define the variables that can be used in this template
+   */
+  variables?:
+    | {
+        /**
+         * Use without brackets (e.g., studentName, parentName)
+         */
+        name: string;
+        description: string;
+        example?: string | null;
+        required?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  messageType: 'INDIVIDUAL' | 'GROUP' | 'CLASS_ANNOUNCEMENT' | 'SCHOOL_ANNOUNCEMENT' | 'EMERGENCY' | 'NEWSLETTER';
+  defaultPriority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  isActive?: boolean | null;
+  /**
+   * Automatically tracked usage statistics
+   */
+  usage?: {
+    timesUsed?: number | null;
+    lastUsed?: string | null;
+  };
+  /**
+   * Tags to help organize and search templates
+   */
+  tags?:
+    | {
+        tag: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: string;
+  id: number;
   document?:
     | ({
         relationTo: 'users';
-        value: string | User;
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'schools';
+        value: number | School;
+      } | null)
+    | ({
+        relationTo: 'students';
+        value: number | Student;
+      } | null)
+    | ({
+        relationTo: 'inquiries';
+        value: number | Inquiry;
+      } | null)
+    | ({
+        relationTo: 'applications';
+        value: number | Application;
+      } | null)
+    | ({
+        relationTo: 'messages';
+        value: number | Message;
+      } | null)
+    | ({
+        relationTo: 'messageTemplates';
+        value: number | MessageTemplate;
       } | null)
     | ({
         relationTo: 'media';
-        value: string | Media;
+        value: number | Media;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   updatedAt: string;
   createdAt: string;
@@ -184,10 +596,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: string;
+  id: number;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   key?: string | null;
   value?:
@@ -207,7 +619,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: string;
+  id: number;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -218,6 +630,13 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  firstName?: T;
+  lastName?: T;
+  role?: T;
+  school?: T;
+  phone?: T;
+  dateOfBirth?: T;
+  address?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -234,6 +653,237 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "schools_select".
+ */
+export interface SchoolsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  address?: T;
+  phone?: T;
+  email?: T;
+  website?: T;
+  logo?: T;
+  establishedYear?: T;
+  description?: T;
+  settings?:
+    | T
+    | {
+        allowOnlineApplications?: T;
+        applicationDeadline?: T;
+        gradeClasses?:
+          | T
+          | {
+              grade?: T;
+              capacity?: T;
+              id?: T;
+            };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "students_select".
+ */
+export interface StudentsSelect<T extends boolean = true> {
+  firstName?: T;
+  lastName?: T;
+  dateOfBirth?: T;
+  grade?: T;
+  school?: T;
+  parents?: T;
+  enrollmentStatus?: T;
+  enrollmentDate?: T;
+  studentId?: T;
+  emergencyContact?:
+    | T
+    | {
+        name?: T;
+        relationship?: T;
+        phone?: T;
+        email?: T;
+      };
+  medicalInfo?:
+    | T
+    | {
+        allergies?: T;
+        medications?: T;
+        specialNeeds?: T;
+      };
+  academicInfo?:
+    | T
+    | {
+        previousSchool?: T;
+        gpa?: T;
+        notes?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "inquiries_select".
+ */
+export interface InquiriesSelect<T extends boolean = true> {
+  studentName?: T;
+  parentFirstName?: T;
+  parentLastName?: T;
+  parentEmail?: T;
+  parentPhone?: T;
+  school?: T;
+  gradeInterested?: T;
+  enrollmentYear?: T;
+  inquiryType?: T;
+  message?: T;
+  status?: T;
+  assignedTo?: T;
+  followUpDate?: T;
+  notes?: T;
+  source?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "applications_select".
+ */
+export interface ApplicationsSelect<T extends boolean = true> {
+  inquiry?: T;
+  applicationNumber?: T;
+  school?: T;
+  studentInfo?:
+    | T
+    | {
+        firstName?: T;
+        lastName?: T;
+        dateOfBirth?: T;
+        grade?: T;
+        gender?: T;
+        previousSchool?: T;
+        currentGPA?: T;
+      };
+  parentInfo?:
+    | T
+    | {
+        primaryParent?:
+          | T
+          | {
+              firstName?: T;
+              lastName?: T;
+              email?: T;
+              phone?: T;
+              occupation?: T;
+              relationship?: T;
+            };
+        secondaryParent?:
+          | T
+          | {
+              firstName?: T;
+              lastName?: T;
+              email?: T;
+              phone?: T;
+              occupation?: T;
+              relationship?: T;
+            };
+        address?:
+          | T
+          | {
+              street?: T;
+              city?: T;
+              state?: T;
+              zipCode?: T;
+            };
+      };
+  documents?:
+    | T
+    | {
+        documentType?: T;
+        document?: T;
+        notes?: T;
+        id?: T;
+      };
+  status?: T;
+  submittedAt?: T;
+  reviewedBy?: T;
+  reviewNotes?: T;
+  interviewDate?: T;
+  tuitionAidRequested?: T;
+  enrollmentDeadline?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages_select".
+ */
+export interface MessagesSelect<T extends boolean = true> {
+  subject?: T;
+  content?: T;
+  sender?: T;
+  recipients?: T;
+  messageType?: T;
+  priority?: T;
+  school?: T;
+  relatedStudent?: T;
+  status?: T;
+  sentAt?: T;
+  scheduledFor?: T;
+  readReceipts?:
+    | T
+    | {
+        user?: T;
+        readAt?: T;
+        id?: T;
+      };
+  attachments?: T;
+  template?: T;
+  parentThread?: T;
+  deliveryMethod?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messageTemplates_select".
+ */
+export interface MessageTemplatesSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  category?: T;
+  school?: T;
+  subject?: T;
+  content?: T;
+  variables?:
+    | T
+    | {
+        name?: T;
+        description?: T;
+        example?: T;
+        required?: T;
+        id?: T;
+      };
+  messageType?: T;
+  defaultPriority?: T;
+  defaultDeliveryMethods?: T;
+  recipientRoles?: T;
+  isActive?: T;
+  usage?:
+    | T
+    | {
+        timesUsed?: T;
+        lastUsed?: T;
+      };
+  tags?:
+    | T
+    | {
+        tag?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
