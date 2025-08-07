@@ -1,7 +1,14 @@
 import type { CollectionConfig } from 'payload'
+import { adminOnly, adminOrSameSchool } from '../lib/access'
 
 export const Schools: CollectionConfig = {
   slug: 'schools',
+  access: {
+    read: ({ req }) => adminOrSameSchool('id')({ req }) || false,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
+  },
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'slug', 'phone', 'email'],

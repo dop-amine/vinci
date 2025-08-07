@@ -1,7 +1,29 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, Where } from 'payload'
+import { adminOnly } from '../lib/access'
 
 export const Students: CollectionConfig = {
   slug: 'students',
+  access: {
+    read: ({ req }) => {
+      const user = req.user as
+        | { role?: string; school?: number | string; id?: number | string }
+        | undefined
+      if (!user) return false
+      if (user.role === 'ADMIN') return true
+      if (user.role === 'TEACHER') {
+        const where: Where = { school: { equals: user.school ?? null } }
+        return where
+      }
+      if (user.role === 'PARENT') {
+        const where: Where = { parents: { in: [user.id] } }
+        return where
+      }
+      return false
+    },
+    create: ({ req }) => req.user?.role === 'ADMIN' || req.user?.role === 'TEACHER' || false,
+    update: ({ req }) => req.user?.role === 'ADMIN' || req.user?.role === 'TEACHER' || false,
+    delete: adminOnly,
+  },
   admin: {
     useAsTitle: 'firstName',
     defaultColumns: ['firstName', 'lastName', 'grade', 'school', 'enrollmentStatus'],

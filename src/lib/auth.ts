@@ -19,9 +19,22 @@ export async function getCurrentUser() {
 
     const { user } = await payload.auth({ headers })
 
+    // If user exists but school relationship isn't populated, fetch it with depth
+    if (user && user.school && typeof user.school === 'number') {
+      const fullUser = await payload.findByID({
+        collection: 'users',
+        id: user.id,
+        depth: 2, // Populate relationships
+      })
+      return fullUser
+    }
+
     return user
   } catch (error) {
-    console.error('Error getting current user:', error)
+    // Only log in development or when it's an unexpected error
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error getting current user:', error)
+    }
     return null
   }
 }
@@ -33,7 +46,7 @@ export function isAuthorized(userRole: string, allowedRoles: string[]): boolean 
 export function redirectByRole(role: string): string {
   switch (role) {
     case 'ADMIN':
-      return '/dashboard/admin'
+      return '/admin' // Route directly to Payload admin panel
     case 'TEACHER':
       return '/dashboard/teacher'
     case 'PARENT':

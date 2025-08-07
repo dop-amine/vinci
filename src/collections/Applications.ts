@@ -1,7 +1,14 @@
 import type { CollectionConfig } from 'payload'
+import { adminOnly, adminOrSameSchool } from '../lib/access'
 
 export const Applications: CollectionConfig = {
   slug: 'applications',
+  access: {
+    read: ({ req }) => adminOrSameSchool('school')({ req }) || false,
+    create: ({ req }) => !!req.user, // must be logged in to start an application
+    update: ({ req }) => adminOrSameSchool('school')({ req }) || false,
+    delete: adminOnly,
+  },
   admin: {
     useAsTitle: 'applicationNumber',
     defaultColumns: ['applicationNumber', 'school', 'status', 'submittedAt'],
@@ -306,4 +313,19 @@ export const Applications: CollectionConfig = {
       label: 'Enrollment Response Deadline',
     },
   ],
+  hooks: {
+    beforeChange: [
+      async ({ data, req, operation }) => {
+        // Ensure school is set from user when creating
+        if (operation === 'create') {
+          if (!data) return data
+          const user = req.user as { school?: number | string } | undefined
+          if (user?.school && !data.school) {
+            data.school = user.school
+          }
+        }
+        return data
+      },
+    ],
+  },
 }

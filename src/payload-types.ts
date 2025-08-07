@@ -460,6 +460,7 @@ export interface Message {
    * If this is a reply to another message
    */
   parentThread?: (number | null) | Message;
+  deliveryMethod?: ('IN_APP' | 'EMAIL' | 'SMS' | 'PUSH')[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -524,6 +525,11 @@ export interface MessageTemplate {
     | null;
   messageType: 'INDIVIDUAL' | 'GROUP' | 'CLASS_ANNOUNCEMENT' | 'SCHOOL_ANNOUNCEMENT' | 'EMERGENCY' | 'NEWSLETTER';
   defaultPriority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  defaultDeliveryMethods?: ('IN_APP' | 'EMAIL' | 'SMS' | 'PUSH')[] | null;
+  /**
+   * Who typically receives messages using this template
+   */
+  recipientRoles?: ('PARENT' | 'TEACHER' | 'STUDENT' | 'ADMIN')[] | null;
   isActive?: boolean | null;
   /**
    * Automatically tracked usage statistics

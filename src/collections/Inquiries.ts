@@ -1,7 +1,15 @@
 import type { CollectionConfig } from 'payload'
+import { adminOnly, adminOrSameSchool } from '../lib/access'
 
 export const Inquiries: CollectionConfig = {
   slug: 'inquiries',
+  access: {
+    // Public can create inquiries; reading restricted by school and role
+    read: ({ req }) => adminOrSameSchool('school')({ req }) || false,
+    create: () => true,
+    update: ({ req }) => adminOrSameSchool('school')({ req }) || false,
+    delete: adminOnly,
+  },
   admin: {
     useAsTitle: 'studentName',
     defaultColumns: ['studentName', 'parentEmail', 'gradeInterested', 'status', 'createdAt'],
