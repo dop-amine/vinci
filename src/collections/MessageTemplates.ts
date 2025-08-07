@@ -1,7 +1,14 @@
 import type { CollectionConfig } from 'payload'
+import { adminOnly, templatesReadableWhere } from '../lib/access'
 
 export const MessageTemplates: CollectionConfig = {
   slug: 'messageTemplates',
+  access: {
+    read: templatesReadableWhere,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
+  },
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'category', 'school', 'isActive'],
@@ -129,7 +136,8 @@ export const MessageTemplates: CollectionConfig = {
     },
     {
       name: 'defaultDeliveryMethods',
-      type: 'checkbox-group',
+      type: 'select',
+      hasMany: true,
       options: [
         { label: 'In-App Notification', value: 'IN_APP' },
         { label: 'Email', value: 'EMAIL' },
@@ -141,7 +149,8 @@ export const MessageTemplates: CollectionConfig = {
     },
     {
       name: 'recipientRoles',
-      type: 'checkbox-group',
+      type: 'select',
+      hasMany: true,
       options: [
         { label: 'Parents', value: 'PARENT' },
         { label: 'Teachers', value: 'TEACHER' },
